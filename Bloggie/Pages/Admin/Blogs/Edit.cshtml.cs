@@ -1,58 +1,72 @@
 using Bloggie.Data;
+using Bloggie.Enum;
 using Bloggie.Models.Domain;
+using Bloggie.Models.ViewModels;
+using Bloggie.Repositories;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Text.Json;
 
 namespace Bloggie.Pages.Admin.Blogs
 {
     public class EditModel : PageModel
     {
-        private readonly BloggieDbContext bloggieDbContext;
+        private readonly IBlogPostRepository blogPostRepository;
 
         [BindProperty]
         public BlogPost blogPost { get; set; }
 
-        public EditModel(BloggieDbContext _bloggieDbContext)
+        public EditModel(IBlogPostRepository _blogPostRepository)
         {
-            this.bloggieDbContext = _bloggieDbContext;
+            this.blogPostRepository = _blogPostRepository;
         }
 
         public async Task OnGet(Guid id)
         {
-            blogPost = await this.bloggieDbContext.BlogPosts.FindAsync(id);
+            blogPost = await this.blogPostRepository.GetAsync(id);
         }
 
         public async Task<IActionResult> OnPostEdit()
         {
-            BlogPost blogPostExists = await this.bloggieDbContext.BlogPosts.FindAsync(blogPost.Id);
-
-            if(blogPostExists != null)
+            try
             {
-                blogPostExists.Heading = blogPost.Heading;
-                blogPostExists.PageTitle = blogPost.PageTitle;
-                blogPostExists.Content = blogPost.Content;
-                blogPostExists.ShortDescription = blogPost.ShortDescription;
-                blogPostExists.FeaturedImageUrl = blogPost.FeaturedImageUrl;
-                blogPostExists.UrlHandle = blogPost.UrlHandle;
-                blogPostExists.PublishDate = blogPost.PublishDate;
-                blogPostExists.Author = blogPost.Author;
-                blogPostExists.Visible = blogPost.Visible;
+                await this.blogPostRepository.UpdateAsync(blogPost);
+                ViewData["MessageDescription"] = "Save was successfully saved!";
+
+                ViewData["Notification"] = new Notification()
+                {
+                    message = "Record updated successfully",
+                    type = NotificationType.Sucess
+                };
+            }
+            catch (Exception)
+            {
+                ViewData["Notification"] = new Notification()
+                {
+                    message = "Something went wrong!",
+                    type = NotificationType.Error
+                };
             }
 
-            await this.bloggieDbContext.SaveChangesAsync();
+            return Page();
 
-            return RedirectToPage("/Admin/Blogs/List");
         }
 
         public async Task<IActionResult> OnPostDelete()
         {
-            BlogPost blogPostExists = await this.bloggieDbContext.BlogPosts.FindAsync(blogPost.Id);
+            Boolean isDeleted = await this.blogPostRepository.DeleteAsync(blogPost.Id);
 
-            if (blogPostExists != null)
+            if (isDeleted)
             {
-                this.bloggieDbContext.Remove(blogPostExists);
-                await this.bloggieDbContext.SaveChangesAsync();
+                Notification notification = new Notification
+                {
+                    type = Enum.NotificationType.Sucess,
+                    message = "Blog deleted successfully!"
+                };
+
+                TempData["Notification"] = JsonSerializer.Serialize(notification);
+
                 return RedirectToPage("/Admin/Blogs/List");
             }
 

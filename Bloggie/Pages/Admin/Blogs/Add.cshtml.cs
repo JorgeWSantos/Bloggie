@@ -1,22 +1,24 @@
 using Bloggie.Data;
 using Bloggie.Models.Domain;
 using Bloggie.Models.ViewModels;
+using Bloggie.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Text.Json;
 
 namespace Bloggie.Pages.Admin.Blogs
 {
     public class AddModel : PageModel
     {
-        public readonly BloggieDbContext _bloggieDbContext;
+        public readonly IBlogPostRepository blogPostRepository;
         
         [BindProperty]
         public AddBlogPost AddBlogPostRequest { get; set; }
 
 
-        public AddModel(BloggieDbContext bloggieDbContext)
+        public AddModel(IBlogPostRepository _blogPostRepository)
         {
-            this._bloggieDbContext = bloggieDbContext;
+            this.blogPostRepository = _blogPostRepository;
         }
 
         public void OnGet()
@@ -38,8 +40,15 @@ namespace Bloggie.Pages.Admin.Blogs
                 Visible = AddBlogPostRequest.Visible,
             };
 
-            await this._bloggieDbContext.BlogPosts.AddAsync(blogPost);
-            await this._bloggieDbContext.SaveChangesAsync();
+            await this.blogPostRepository.AddAsync(blogPost);
+
+            Notification notification = new Notification
+            {
+                type = Enum.NotificationType.Sucess,
+                message = "New blog created!"
+            };
+
+            TempData["Notification"] = JsonSerializer.Serialize(notification);
 
             return RedirectToPage("/Admin/Blogs/List");
         }
