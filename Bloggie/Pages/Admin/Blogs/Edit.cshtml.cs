@@ -17,6 +17,9 @@ namespace Bloggie.Pages.Admin.Blogs
         [BindProperty]
         public BlogPost blogPost { get; set; }
 
+        [BindProperty]
+        public string tags { get; set; }
+
         public EditModel(IBlogPostRepository _blogPostRepository)
         {
             this.blogPostRepository = _blogPostRepository;
@@ -25,13 +28,22 @@ namespace Bloggie.Pages.Admin.Blogs
         public async Task OnGet(Guid id)
         {
             blogPost = await this.blogPostRepository.GetAsync(id);
+
+            if (blogPost.tags != null && blogPost.tags != null)
+            {
+                tags = string.Join(',', blogPost.tags.Select(x => x.Name));
+            }
         }
 
         public async Task<IActionResult> OnPostEdit()
         {
             try
             {
+                blogPost.tags = new List<Tag>(tags.Split(',')
+                                    .Select(x => new Tag() { Name = x.Trim() }));
+
                 await this.blogPostRepository.UpdateAsync(blogPost);
+
                 ViewData["MessageDescription"] = "Save was successfully saved!";
 
                 ViewData["Notification"] = new Notification()
