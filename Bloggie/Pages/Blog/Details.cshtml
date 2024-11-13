@@ -1,4 +1,5 @@
 ﻿@page "/blog/{urlHandle}"
+@using Bloggie.Models.Domain
 @model Bloggie.Pages.Blogs.DetailsModel
 @{
     ViewData["Title"] = Model.blogPost.PageTitle;
@@ -14,6 +15,18 @@
                 <div class="d-flex justify-content-between mb-3">
                     <span class="text-secondary">@Model.blogPost.Author</span>
                     <span class="text-secondary">@Model.blogPost.PublishDate.ToShortDateString()</span>
+                </div>
+
+                <div class="mb-3">
+                    @if(Model.blogPost.tags != null)
+                    {
+                        foreach (Tag tag in Model.blogPost.tags)
+                        {
+                            <a href="/tags/@tag.Name">
+                                <span class="badge bg-dark">@tag.Name</span>
+                            </a>
+                        }
+                    }
                 </div>
 
                 <img src="@Model.blogPost.FeaturedImageUrl" class="d-block img-fluid mb-3"/>
